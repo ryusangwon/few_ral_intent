@@ -22,7 +22,7 @@ pip3 install sentencepiece
 
 1. Input Embedding
 2. Position Embedding
-
+  - Positional Encoding
 $$ PE_{pos, 2i} = sin(pos/10000^{2i/d_{model}}) $$
 
 $$ PE_{pos, 2i+1} = cos(pos/10000^{2i/d_{model}}) $$
