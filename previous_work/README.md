@@ -26,6 +26,10 @@ pip3 install sentencepiece
 
 <br>
 
+<img src = "https://user-images.githubusercontent.com/78716763/154789522-febe9a85-da67-442b-b641-fe79bee9b4c7.png" width="450" height="600">
+
+<br>
+
 1. Input Embedding
 
 <br>
@@ -72,3 +76,11 @@ pip3 install sentencepiece
 ----
 
 ### 3. BERT
+
+<br>
+
+<img src = "https://user-images.githubusercontent.com/78716763/154789630-7e0624a7-a3aa-47f7-882f-8ee264f2bf4d.png">
+
+<br>
+
+<img src = "https://user-images.githubusercontent.com/78716763/154789774-4f5f5662-aec6-4cb3-8a1f-196310a27051.png">
