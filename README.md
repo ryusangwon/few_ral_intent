@@ -1,5 +1,1 @@
-### transformer
-
-#### Bert
-
-Intent classification in Korean
+### Intent classification in Korean
