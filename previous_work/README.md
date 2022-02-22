@@ -79,8 +79,25 @@ pip3 install sentencepiece
 
 <br>
 
+1. Transfer Learning: Unsupervised Pre-training + Supervised Fine-Tuning
+
+<br>
+
 <img src = "https://user-images.githubusercontent.com/78716763/154789630-7e0624a7-a3aa-47f7-882f-8ee264f2bf4d.png" width="680">
 
 <br>
 
+2. BERT input Embedding: Token Embedding + segmentation Embedding + Position Embedding
+
+<br>
+
 <img src = "https://user-images.githubusercontent.com/78716763/154789774-4f5f5662-aec6-4cb3-8a1f-196310a27051.png" width="680">
+
+<br>
+
+3. Masked Language Model
+
+<br>
+
+4. Next Sentence Prediction
+
