@@ -8,7 +8,7 @@
 
 1. Construct Vocab
 
-  - Make Corpus 
+  - Make Corpus
   - Convert csv file to text file.
   - Do Subword segmentation using SentencePiece.
 
@@ -100,4 +100,3 @@ pip3 install sentencepiece
 <br>
 
 4. Next Sentence Prediction
-
