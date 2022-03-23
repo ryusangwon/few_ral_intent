@@ -1,6 +1,3 @@
-## **Intent classification in Korean**
+## **Few-Shot Intent classification**
 
 <br>
-
-meta learning & few-shot & joint pre-training를 통한 BERT의 성능 향상
-
