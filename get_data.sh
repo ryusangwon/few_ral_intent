@@ -25,7 +25,7 @@ unzip WNLI.zip
 
 cd ..
 
-cut -f9-10,11 ./original_data/multinli_1.0/train.txt > ./mnli.train.txt
+cut -f9-10,11 ./original_data/multinli_1.0/multinli_1.0_train.txt > ./mnli.train.txt
 cut -f6,7 ./original_data/snli_1.0/snli_1.0_train.txt > tmp1
 cut -f1 ./original_data/snli_1.0/snli_1.0_train.txt > tmp2
 paste tmp1 tmp2 > ./snli.train.txt
@@ -33,7 +33,7 @@ rm tmp1
 rm tmp2
 cut -f 2-4 ./original_data/WNLI/train.tsv > ./wnli.train.txt
 
-cut -f9-10,11 ./original_data/multinli_1.0/dev_matched.txt > ./mnli.dev.txt
+cut -f9-10,11 ./original_data/multinli_1.0/multinli_1.0_dev_matched.txt > ./mnli.dev.txt
 cut -f6,7 ./original_data/snli_1.0/snli_1.0_dev.txt > tmp1
 cut -f1 ./original_data/snli_1.0/snli_1.0_dev.txt > tmp2
 paste tmp1 tmp2 > ./snli.dev.txt
