@@ -9,6 +9,10 @@
 /data/clinc150/original_data/
 /data/clinc150/travel/
 
+/transformer/results/
+/transformer/test_trainer/
+/transformer/.ipynb_checkpoints/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -87,7 +91,6 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-/transformer/.ipynb_checkpoints/
 
 # IPython
 profile_default/
