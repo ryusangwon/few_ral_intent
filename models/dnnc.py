@@ -1,6 +1,8 @@
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
 
+from .utils import get_optimizer
+
 import os
 import random
 import numpy as np
@@ -29,3 +31,24 @@ class DNNC:
         else:
             self.model = AutoModelForSequenceClassification.from_pretrained(self.args.bert_model, config=self.config)
         self.model.to(self.device)
+    
+    def train(self, train_examples, dev_examples, file_path=None):
+        
+        train_batch_size = int(self.args.train_batch_size / self.args.gradient_accumulation_steps)
+        
+        random.seed(self.args.seed)
+        np.random.seed(self.args.seed)
+        torch.manual_seed(self.args.seed)
+        torch.cuda.manual_seed(self.args.seed)
+        
+        num_train_steps = int(len(train_examples)/train_batch_size/self.args.gradient_accumulation_steps * self.args.num_train_epochs)
+        
+        optimizer, scheduler = get_optimizer(self.model, num_train_steps, self.args)
+        
+        best_dev_accuracy = -1.0
+        
+        train_features, label_distribution = self.convert_examples_to_features(train_examples, train=True)
+        train_dataloader = get_train_dataloader(train_features, train_batch_size)
+    
+    def convert_examples_to_features(self, examples, train):
+        
