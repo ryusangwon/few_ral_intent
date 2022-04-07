@@ -107,6 +107,20 @@ pip3 install sentencepiece
 
 <br>
 
+1. Train model longer with bigger batches with more data
+
+<br>
+
+2. Full-Sentences without Next Sentence Prediction(NSP)
+
+<br>
+
+3. Dynamically changing masking pattern
+
+<br>
+
+4. Large minibatch
+
 ----
 
 ### 5. SBERT(Sentence-BERT)
