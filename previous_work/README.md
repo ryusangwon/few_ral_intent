@@ -126,3 +126,9 @@ pip3 install sentencepiece
 ### 5. SBERT(Sentence-BERT)
 
 <br>
+
+<img src = "https://user-images.githubusercontent.com/78716763/162454759-5af17a7b-d3ad-4f7d-922f-b575b5b726c3.png" width="680">
+
+<br>
+
+1. Siamese network & Triplet Loss
