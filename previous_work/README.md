@@ -132,3 +132,8 @@ pip3 install sentencepiece
 <br>
 
 1. Siamese network & Triplet Loss
+
+<br>
+
+2. Use MEAN strategy of previous BERT Embedding
+  - Computing the mean of all output vectors
