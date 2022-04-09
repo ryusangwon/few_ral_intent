@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
 
-from .utils import get_optimizer
+from .utils import get_optimizer, get_train_dataloader
 
 import os
 import random
@@ -50,5 +50,64 @@ class DNNC:
         train_features, label_distribution = self.convert_examples_to_features(train_examples, train=True)
         train_dataloader = get_train_dataloader(train_features, train_batch_size)
     
-    def convert_examples_to_features(self, examples, train):
-        
+   def convert_examples_to_features(self, examples, train):
+        label_map = {label: i for i, label in enumerate(self.label_list)}
+        is_roberta = True if "roberta" in self.config.architectures[0].lower() else False
+
+        if train:
+            label_distribution = torch.FloatTensor(len(label_map)).zero_()
+        else:
+            label_distribution = None
+
+        features = []
+        for (ex_index, example) in enumerate(examples):
+            tokens_a = self.tokenizer.tokenize(example.text_a)
+            tokens_b = self.tokenizer.tokenize(example.text_b)
+
+            if is_roberta:
+                truncate_seq_pair(tokens_a, tokens_b, self.args.max_seq_length - 4)
+            else:
+                truncate_seq_pair(tokens_a, tokens_b, self.args.max_seq_length - 3)
+
+            tokens = [self.tokenizer.cls_token] + tokens_a + [self.tokenizer.sep_token]
+            segment_ids = [0] * len(tokens)
+
+            if is_roberta:
+                tokens_b = [self.tokenizer.sep_token] + tokens_b + [self.tokenizer.sep_token]
+                segment_ids += [0] * len(tokens_b)
+            else:
+                tokens_b = tokens_b + [self.tokenizer.sep_token]
+                segment_ids += [1] * len(tokens_b)
+            tokens += tokens_b
+
+            input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
+            input_mask = [1] * len(input_ids)
+
+            padding = [0] * (self.args.max_seq_length - len(input_ids))
+            input_ids += padding
+            input_mask += padding
+            segment_ids += padding
+
+            assert len(input_ids) == self.args.max_seq_length
+            assert len(input_mask) == self.args.max_seq_length
+            assert len(segment_ids) == self.args.max_seq_length
+
+            if example.label is None:
+                label_id = -1
+            else:
+                label_id = label_map[example.label]
+
+            if train:
+                label_distribution[label_id] += 1.0
+
+            features.append(
+                InputFeatures(input_ids=input_ids,
+                              input_mask=input_mask,
+                              segment_ids=segment_ids,
+                              label_id=label_id))
+
+        if train:
+            label_distribution = label_distribution / label_distribution.sum()
+            return features, label_distribution
+        else:
+            return features
