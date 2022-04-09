@@ -4,4 +4,6 @@
 
 2. Tokenizer
 
-3. fine-tuning
+3. Fine-tuning
+
+4. Auto Model
