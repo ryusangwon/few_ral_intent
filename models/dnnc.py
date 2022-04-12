@@ -1,7 +1,9 @@
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
 
-from .utils import get_optimizer, get_train_dataloader
+from .utils import get_optimizer, get_train_dataloader, get_eval_loader, truncate_seq_pair, loss_with_label_smoothing, process_train_batch, accuracy
+from .utils import InputExample, InputFeatures
+from .utils import get_logger
 
 import os
 import random
@@ -49,8 +51,126 @@ class DNNC:
         
         train_features, label_distribution = self.convert_examples_to_features(train_examples, train=True)
         train_dataloader = get_train_dataloader(train_features, train_batch_size)
+        
+        logger.info('***** Label distribution for label smoothing *****')
+        logger.info(str(label_distribution))
+        
+        logger.info("***** Running training *****")
+        logger.info("  Num examples = %d", len(train_examples))
+        logger.info("  Batch size = %d", train_batch_size)
+        logger.info("  Num steps = %d", num_train_steps)
+        
+        self.model.zero_grad()
+        self.model.train()
+        
+        for _ in trange(int(self.args.num_train_epochs), desc="Epoch"):
+
+            for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+
+                input_ids, input_mask, segment_ids, label_ids = process_train_batch(batch, self.device)
+                outputs = self.model(input_ids=input_ids, attention_mask=input_mask, token_type_ids=segment_ids)
+                logits = outputs[0]
+                loss = loss_with_label_smoothing(label_ids, logits, label_distribution, self.args.label_smoothing, self.device)
+
+                if self.args.gradient_accumulation_steps > 1:
+                    loss = loss / self.args.gradient_accumulation_steps
+
+                loss.backward()
+
+                if (step + 1) % self.args.gradient_accumulation_steps == 0:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
+
+                    optimizer.step()
+                    scheduler.step()
+                    self.model.zero_grad()
+
+            acc = self.evaluate(dev_examples)
+
+            if acc > best_dev_accuracy and file_path is not None:
+                best_dev_accuracy = acc
+                self.save(file_path)
+            
+            self.model.train()
     
-   def convert_examples_to_features(self, examples, train):
+    def evaluate(self, eval_examples):
+        if len(eval_examples) == 0:
+            logger.info('\n  No eval data!')
+            return None
+
+        eval_features = self.convert_examples_to_features(eval_examples, train = False)
+        eval_dataloader = get_eval_dataloader(eval_features, self.args.eval_batch_size)
+        
+        self.model.eval()
+        eval_accuracy = 0
+        nb_eval_examples = 0
+
+        for input_ids, input_mask, segment_ids, label_ids in tqdm(eval_dataloader, desc="Evaluating"):
+            input_ids = input_ids.to(self.device)
+            input_mask = input_mask.to(self.device)
+            segment_ids = segment_ids.to(self.device)
+
+            with torch.no_grad():
+                outputs = self.model(input_ids=input_ids, attention_mask=input_mask, token_type_ids=segment_ids)
+                logits = outputs[0]
+
+            logits = logits.detach().cpu().numpy()
+            label_ids = label_ids.numpy()
+            tmp_eval_accuracy = accuracy(logits, label_ids)
+
+            eval_accuracy += tmp_eval_accuracy
+            nb_eval_examples += input_ids.size(0)
+
+        eval_accuracy = eval_accuracy / nb_eval_examples
+        logger.info("\n  Accuracy = %f", eval_accuracy)
+        return eval_accuracy
+    
+    def predict(self, data):
+        self.model.eval()
+
+        input = [InputExample(premise, hypothesis) for (premise, hypothesis) in data]
+
+        eval_features = self.convert_examples_to_features(input, train = False)
+        input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
+        input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
+        segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
+
+        max_len = input_mask.sum(dim=1).max().item()
+        input_ids = input_ids[:, :max_len]
+        input_mask = input_mask[:, :max_len]
+        segment_ids = segment_ids[:, :max_len]
+
+        CHUNK = 500
+        EXAMPLE_NUM = input_ids.size(0)
+        labels = []
+        probs = None
+        start_index = 0
+
+        while start_index < EXAMPLE_NUM:
+            end_index = min(start_index+CHUNK, EXAMPLE_NUM)
+            
+            input_ids_ = input_ids[start_index:end_index, :].to(self.device)
+            input_mask_ = input_mask[start_index:end_index, :].to(self.device)
+            segment_ids_ = segment_ids[start_index:end_index, :].to(self.device)
+
+            with torch.no_grad():
+                outputs = self.model(input_ids=input_ids_, attention_mask=input_mask_, token_type_ids=segment_ids_)
+                logits = outputs[0]
+                probs_ = torch.softmax(logits, dim=1)
+
+            probs_ = probs_.detach().cpu()
+            if probs is None:
+                probs = probs_
+            else:
+                probs = torch.cat((probs, probs_), dim = 0)
+            labels += [self.label_list[torch.max(probs_[i], dim=0)[1].item()] for i in range(probs_.size(0))]
+            start_index = end_index
+
+        assert len(labels) == EXAMPLE_NUM
+        assert probs.size(0) == EXAMPLE_NUM
+            
+        return labels, probs
+    
+    def convert_examples_to_features(self, examples, train):
         label_map = {label: i for i, label in enumerate(self.label_list)}
         is_roberta = True if "roberta" in self.config.architectures[0].lower() else False
 
