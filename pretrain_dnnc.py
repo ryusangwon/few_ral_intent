@@ -1,3 +1,5 @@
+# Copyright 2020, Salesforce.com, Inc.
+
 import os
 import argparse
 import random
@@ -96,7 +98,6 @@ def main():
         if not os.path.exists(args.model_dir_path):
             os.mkdir(args.model_dir_path)
         nli_model.train(nli_train_examples, nli_dev_examples, args.model_dir_path)
-
 
 if __name__ == '__main__':
     main()

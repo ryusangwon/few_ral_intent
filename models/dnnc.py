@@ -1,7 +1,9 @@
+# Copyright 2020, Salesforce.com, Inc.
+
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
 
-from .utils import get_optimizer, get_train_dataloader, get_eval_loader, truncate_seq_pair, loss_with_label_smoothing, process_train_batch, accuracy
+from .utils import get_optimizer, get_train_dataloader, get_eval_dataloader, truncate_seq_pair, loss_with_label_smoothing, process_train_batch, accuracy
 from .utils import InputExample, InputFeatures
 from .utils import get_logger
 

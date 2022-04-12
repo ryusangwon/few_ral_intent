@@ -1,3 +1,5 @@
+# Copyright 2020, Salesforce.com, Inc.
+
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, RandomSampler, DataLoader, SequentialSampler
@@ -8,9 +10,10 @@ import random
 import numpy as np
 import logging
 
-THERSHOLDS = [i * 0.1 for i in range(11)]
+THRESHOLDS = [i * 0.1 for i in range(11)]
 
 def load_nli_examples(file_path, do_lower_case):
+    
     examples = []
     with open(file_path, 'r') as f:
         for line in f:
@@ -21,13 +24,6 @@ def load_nli_examples(file_path, do_lower_case):
                 e = InputExample(fields[0], fields[1], fields[2])
             examples.append(e)
     return examples
-
-def get_logger(name):
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-                        datefmt='%m/%d/%Y %H%M%S',
-                        level=logging.INFO)
-    logger = logging.getLogger(name)
-    return logger
 
 def get_optimizer(model, t_total, args):
     
@@ -48,6 +44,7 @@ def get_optimizer(model, t_total, args):
     return optimizer, scheduler
 
 def get_train_dataloader(train_features, train_batch_size):
+    
     all_input_ids = torch.tensor([f.input_ids for f in train_features], dtype=torch.long)
     all_input_mask = torch.tensor([f.input_mask for f in train_features], dtype=torch.long)
     all_segment_ids = torch.tensor([f.segment_ids for f in train_features], dtype=torch.long)
@@ -59,6 +56,7 @@ def get_train_dataloader(train_features, train_batch_size):
     return train_dataloader
 
 def get_eval_dataloader(eval_features, eval_batch_size):
+    
     all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
     all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
     all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
@@ -68,6 +66,22 @@ def get_eval_dataloader(eval_features, eval_batch_size):
     eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=eval_batch_size)
 
     return eval_dataloader
+
+def loss_with_label_smoothing(label_ids, logits, label_distribution, coeff, device):
+    
+    # label smoothing
+    label_ids = label_ids.cpu()
+    target_distribution = torch.FloatTensor(logits.size()).zero_()
+    for i in range(label_ids.size(0)):
+        target_distribution[i, label_ids[i]] = 1.0
+    target_distribution = coeff * label_distribution.unsqueeze(0) + (1.0 - coeff) * target_distribution
+    target_distribution = target_distribution.to(device)
+
+    # KL-div loss
+    prediction = torch.log(torch.softmax(logits, dim=1))
+    loss = F.kl_div(prediction, target_distribution, reduction='mean')
+
+    return loss
 
 def truncate_seq_pair(tokens_a, tokens_b, max_length):
     
@@ -81,6 +95,7 @@ def truncate_seq_pair(tokens_a, tokens_b, max_length):
             tokens_b.pop()
             
 def process_train_batch(batch, device):
+    
     input_mask = batch[1]
     batch_max_len = input_mask.sum(dim=1).max().item()
 
@@ -93,8 +108,17 @@ def process_train_batch(batch, device):
     return input_ids, input_mask, segment_ids, label_ids
 
 def accuracy(out, labels):
+    
     outputs = np.argmax(out, axis=1)
     return np.sum(outputs == labels)
+
+def get_logger(name):
+    
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+                        datefmt='%m/%d/%Y %H%M%S',
+                        level=logging.INFO)
+    logger = logging.getLogger(name)
+    return logger
 
 class InputFeatures(object):
 
