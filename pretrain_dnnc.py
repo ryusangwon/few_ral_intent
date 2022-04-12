@@ -56,7 +56,7 @@ def main():
                         type=float,
                         required=False,
                         help="gradient clipping for Max gradient norm")
-    parser.add_argument("--label smoothing",
+    parser.add_argument("--label_smoothing",
                         default=0.1,
                         type=float,
                         help="Coefficient for label smoothing (is 0.0 no label smoothing)")

@@ -15,6 +15,8 @@ from tqdm import tqdm, trange
 ENTAILMENT = 'entailment'
 NON_ENTAILMENT = 'non_entailment'
 
+logger = get_logger(__name__)
+
 class DNNC:
     def __init__(self,
                  path: str,

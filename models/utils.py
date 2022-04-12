@@ -1,7 +1,7 @@
 # Copyright 2020, Salesforce.com, Inc.
 
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import TensorDataset, RandomSampler, DataLoader, SequentialSampler
 
 from transformers import AdamW, get_linear_schedule_with_warmup
@@ -39,7 +39,7 @@ def get_optimizer(model, t_total, args):
         }
     ]
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(t_total * args.warmup_proportion), num_training_steps=t_toal)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(t_total * args.warmup_proportion), num_training_steps=t_total)
     
     return optimizer, scheduler
 
