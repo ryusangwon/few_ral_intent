@@ -36,6 +36,13 @@ class DNNC:
             self.model = AutoModelForSequenceClassification.from_pretrained(self.args.bert_model, config=self.config)
         self.model.to(self.device)
     
+    def save(self,
+             dir_path: str):
+
+        model_to_save = self.model.module if hasattr(self.model,
+                                                     'module') else self.model
+        torch.save(model_to_save.state_dict(), '{}/pytorch_model.bin'.format(dir_path))
+    
     def train(self, train_examples, dev_examples, file_path=None):
         
         train_batch_size = int(self.args.train_batch_size / self.args.gradient_accumulation_steps)

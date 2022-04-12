@@ -94,7 +94,11 @@ def main():
     
     if os.path.exists('{}/pytorch_model.bin'.format(args.model_dir_path)):
         assert args.do_predict
-        nli_model = DNNC(path = args.model_dir_path, args = args)
+        nli_model = DNNC(path=args.model_dir_path, args=args)
+        nli_model.evaluate(nli_dev_examples)
+    else:
+        assert not args.do_predict
+        nli_model = DNNC(path=None, args=args)
         if not os.path.exists(args.model_dir_path):
             os.mkdir(args.model_dir_path)
         nli_model.train(nli_train_examples, nli_dev_examples, args.model_dir_path)
