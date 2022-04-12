@@ -27,7 +27,7 @@ def main():
                         default=128,
                         type=int,
                         help="Total batch size for evaluation")
-    parser.add_argument("--learning rate",
+    parser.add_argument("--learning_rate",
                         default=2e-5,
                         type=float,
                         help="The initial learning rate for Adam")
@@ -47,7 +47,7 @@ def main():
     parser.add_argument("--no_cuda",
                         action="store_true",
                         help="Whether not to user CUDA when available")
-    parser.add_argument("--gradient accumulation_steps",
+    parser.add_argument("--gradient_accumulation_steps",
                         default=1,
                         type=int,
                         help="Number of updates teps to accumulate before performing a backward/update pass.")
