@@ -13,6 +13,8 @@
 /transformer/test_trainer/
 */.ipynb_checkpoints/*
 
+/roberta_nli/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
