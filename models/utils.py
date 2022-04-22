@@ -25,6 +25,32 @@ def load_nli_examples(file_path, do_lower_case):
             examples.append(e)
     return examples
 
+class IntentExample:
+    def __init__(self, text, label, do_lower_case):
+        self.original_text = text
+        self.text = text
+        self.label = label
+
+        if do_lower_case:
+            self.text = self.text.lower()
+
+def load_intent_examples(file_path, do_lower_case):
+    examples = []
+
+    with open('{}/seq.in'.format(file_path), 'r', encoding="utf-8") as f_text, open('{}/label'.format(file_path), 'r',
+                                                                                    encoding="utf-8") as f_label:
+        for text, label in zip(f_text, f_label):
+            e = IntentExample(text.strip(), label.strip(), do_lower_case)
+            examples.append(e)
+
+    return examples
+
+def load_intent_datasets(train_file_path, dev_file_path, do_lower_case):
+    train_examples = load_intent_examples(train_file_path, do_lower_case)
+    dev_examples = load_intent_examples(dev_file_path, do_lower_case)
+
+    return train_examples, dev_examples
+
 def get_optimizer(model, t_total, args):
     
     no_decay = ["bias", "LayerNorm.weight"]
@@ -112,6 +138,20 @@ def accuracy(out, labels):
     outputs = np.argmax(out, axis=1)
     return np.sum(outputs == labels)
 
+def calc_in_acc(examples, in_domain_preds, thresholds):
+    in_acc = [0.0] * len(thresholds)
+
+    for e, (conf, pred) in zip(examples, in_domain_preds):
+        for i in range(len(in_acc)):
+            if pred == e.label and conf >= thresholds[i]:
+                in_acc[i] += 1
+
+    if len(examples) > 0:
+        for i in range(len(in_acc)):
+            in_acc[i] = in_acc[i]/len(examples)
+
+    return in_acc
+
 def get_logger(name):
     
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
@@ -134,3 +174,23 @@ class InputExample(object):
         self.text_a = text_a
         self.text_b = text_b
         self.label = label
+
+def sample(N, examples):
+    labels = {} # unique classes
+
+    for e in examples:
+        if e.label in labels:
+            labels[e.label].append(e.text)
+        else:
+            labels[e.label] = [e.text]
+
+    sampled_examples = []
+    for l in labels:
+        random.shuffle(labels[l])
+        if l == 'oos':
+            examples = labels[l][:N]
+        else:
+            examples = labels[l][:N]
+        sampled_examples.append({'task': l, 'examples': examples})
+
+    return sampled_examples
