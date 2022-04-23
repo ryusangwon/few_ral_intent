@@ -35,6 +35,20 @@ class SupConLoss(nn.Module):
         #           if features.is_cuda
         #           else torch.device('cpu'))
         device = features.device
+        print("\n**feature type:", type(features), "**")
+        print("\n**feature size:", features.shape, "**")
+        print("\n**feature size len:", len(features.shape), "**")
+        # features = features.view(-1, 1, 2)
+        features = torch.unsqueeze(features, -1)
+        print("\n**after feature size:", features.shape, "**")
+        print("\n**after feature size len:", len(features.shape), "**")
+        labels = torch.unsqueeze(labels, -1)
+        # labels = torch.unsqueeze(labels, 0)
+        print("\n**label size", labels.shape, "**")
+        print("\n**label size len", len(labels.shape), "**")
+        print("\n**labels.shape[0]", labels.shape[0], "**")
+        print("\n**features.shape[0]", features.shape[0], "**")
+        print("\n**Check please", features.shape[0] != labels.shape[0], "**")
 
         if len(features.shape) < 3:
             raise ValueError('`features` needs to be [bsz, n_views, ...],'
@@ -50,6 +64,8 @@ class SupConLoss(nn.Module):
         elif labels is not None:
             labels = labels.contiguous().view(-1, 1)
             if labels.shape[0] != batch_size:
+                print("\n**Check please", batch_size != labels.shape[0], "**", batch_size, labels.shape[0])
+                print("\n**Check please full size", "**", batch_size, labels.shape)
                 raise ValueError('Num of labels does not match num of features')
             mask = torch.eq(labels, labels.T).float().to(device)
         else:
@@ -66,13 +82,20 @@ class SupConLoss(nn.Module):
         else:
             raise ValueError('Unknown mode: {}'.format(self.contrast_mode))
 
-        # compute logits
+        # compute logits summary
         anchor_dot_contrast = torch.div(
             torch.matmul(anchor_feature, contrast_feature.T),
             torch.matmul(torch.norm(anchor_feature,dim = 1,keepdim=True), torch.norm(contrast_feature,dim=1,keepdim = True).T))
         anchor_dot_contrast = torch.div(anchor_dot_contrast, self.temperature)
-
         logits = anchor_dot_contrast
+
+        # # compute logits cv
+        # anchor_dot_contrast = torch.div(
+        #     torch.matmul(anchor_feature, contrast_feature.T),
+        #     self.temperature)
+        # # for numerical stability
+        # logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+        # logits = anchor_dot_contrast - logits_max.detach()
 
         # tile mask
         mask = mask.repeat(anchor_count, contrast_count)
@@ -88,7 +111,7 @@ class SupConLoss(nn.Module):
         exp_logits = torch.exp(logits) * logits_mask
         log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
 
-        # compute mean of log-likelihood over positive
+        # compute mean of log-likelihood over positive summary
         mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1).clamp(min=0.5)
 
         batch_mask = (mask.sum(1) > 0)
@@ -96,6 +119,15 @@ class SupConLoss(nn.Module):
         # loss
         loss = - (self.temperature / self.base_temperature) * (mean_log_prob_pos * batch_mask)
         loss = torch.sum(loss) / torch.sum(batch_mask).clamp(min=0.5)
+        # loss = loss.view(anchor_count, batch_size).mean()
+
+        return loss
+
+        # # compute mean of log-likelihood over positive cv
+        # mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
+        #
+        # # loss
+        # loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
         # loss = loss.view(anchor_count, batch_size).mean()
 
         return loss
