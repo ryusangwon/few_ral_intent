@@ -12,6 +12,8 @@ import random
 import numpy as np
 from tqdm import tqdm, trange
 
+from supConloss import SupConLoss
+
 ENTAILMENT = 'entailment'
 NON_ENTAILMENT = 'non_entailment'
 
@@ -81,7 +83,14 @@ class DNNC:
                 input_ids, input_mask, segment_ids, label_ids = process_train_batch(batch, self.device)
                 outputs = self.model(input_ids=input_ids, attention_mask=input_mask, token_type_ids=segment_ids)
                 logits = outputs[0]
-                loss = loss_with_label_smoothing(label_ids, logits, label_distribution, self.args.label_smoothing, self.device)
+
+                ce = nn.CrossEntropyLoss()
+                ceLoss = ce(logits, label_ids)
+                l = 1
+                # label_ids = torch.stack([label_ids, label_ids], dim=1)
+                scl = SupConLoss(temperature=0.3, base_temperature=0.3)
+                sclLoss = scl(logits, labels=label_ids)
+                loss = l * sclLoss + (1 - l) * ceLoss
 
                 if self.args.gradient_accumulation_steps > 1:
                     loss = loss / self.args.gradient_accumulation_steps

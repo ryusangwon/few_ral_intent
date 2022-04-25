@@ -194,3 +194,16 @@ def sample(N, examples):
         sampled_examples.append({'task': l, 'examples': examples})
 
     return sampled_examples
+
+def print_results(thresholds, in_acc, oos_recall, oos_prec, oos_f1):
+    results = [['Threshold', 'In-domain accuracy', 'OOS recall', 'OOS precision', 'OOS F1']]
+
+    for i in range(len(thresholds)):
+        entry = [thresholds[i],
+                 100.0 * in_acc[i],
+                 100.0 * oos_recall[i],
+                 100.0 * oos_prec[i],
+                 100.0 * oos_f1[i]]
+        results.append(entry)
+
+    print(tabulate(results[1:], results[0], tablefmt="grid"))
