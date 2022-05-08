@@ -6,20 +6,19 @@ import random
 import os
 import json
 from collections import defaultdict
-
+print("d")
 from models.dnnc import DNNC
 from models.dnnc import ENTAILMENT, NON_ENTAILMENT
 
 from models.utils import InputExample
 from models.utils import load_intent_datasets, load_intent_examples, sample, print_results
 from models.utils import calc_in_acc
-from models.utils import THRESHOLDS
-
+print("3")
 from intent_predictor import DnncIntentPredictor
-
+print("4")
 def main():
     parser = argparse.ArgumentParser()
-
+    print("w")
     parser.add_argument("--seed",
                         default=42,
                         type=int,
@@ -124,7 +123,7 @@ def main():
     parser.add_argument("--do_final_test",
                         action='store_true',
                         help="do_predict the model")
-
+    print("check0")
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -139,7 +138,7 @@ def main():
 
     nli_train_examples = []
     nli_dev_examples = []
-
+    print("check1")
     for i in range(T):
         if args.do_predict:
             nli_train_examples.append([])
@@ -179,49 +178,49 @@ def main():
 
         for j in range(args.over_sampling):
             nli_train_examples[-1] += all_entailment_examples
-
-        if args.output_dir is not None:
-
-            if args.scratch:
-                folder_name = '{}/{}-shot-{}_nli__Scratch/'.format(args.output_dir, N, args.bert_model)
-
-            else:
-                folder_name = '{}/{}-shot-{}_nli__Based_on_nli_fine_tuned_model/'.format(args.output_dir, N,
-                                                                                         args.bert_model)
-
-            if not os.path.exists(folder_name):
-                os.makedirs(folder_name)
-
-            file_name = 'batch_{}---epoch_{}---lr_{}---trials_{}'.format(args.train_batch_size,
-                                                                         args.num_train_epochs,
-                                                                         args.learning_rate, args.num_trials)
-
-            if args.scratch:
-                file_name = '{}__scratch'.format(file_name)
-            else:
-                file_name = '{}__based_on_nli_fine_tuned_model'.format(file_name)
-
-            if args.over_sampling:
-                file_name = file_name + '--over_sampling'
-
-            if args.do_final_test:
-                file_name = file_name + '_TEST.txt'
-            else:
-                file_name = file_name + '.txt'
-
-            f = open(folder_name + file_name, 'w')
-        else:
-            f = None
+    print("check2")
+    if args.output_dir is not None:
 
         if args.scratch:
-            BERT_NLI_PATH = None
+            folder_name = '{}/{}-shot-{}_nli__Scratch/'.format(args.output_dir, N, args.bert_model)
+
         else:
-            BERT_NLI_PATH = args.bert_nli_path
-            assert os.path.exists(BERT_NLI_PATH)
+            folder_name = '{}/{}-shot-{}_nli__Based_on_nli_fine_tuned_model/'.format(args.output_dir, N,
+                                                                                     args.bert_model)
 
-        if args.save_model_path and args.do_predict:
-            stats_lists_preds = defaultdict(list)
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
 
+        file_name = 'batch_{}---epoch_{}---lr_{}---trials_{}'.format(args.train_batch_size,
+                                                                     args.num_train_epochs,
+                                                                     args.learning_rate, args.num_trials)
+
+        if args.scratch:
+            file_name = '{}__scratch'.format(file_name)
+        else:
+            file_name = '{}__based_on_nli_fine_tuned_model'.format(file_name)
+
+        if args.over_sampling:
+            file_name = file_name + '--over_sampling'
+
+        if args.do_final_test:
+            file_name = file_name + '_TEST.txt'
+        else:
+            file_name = file_name + '.txt'
+
+        f = open(folder_name + file_name, 'w')
+    else:
+        f = None
+
+    if args.scratch:
+        BERT_NLI_PATH = None
+    else:
+        BERT_NLI_PATH = args.bert_nli_path
+        assert os.path.exists(BERT_NLI_PATH)
+
+    if args.save_model_path and args.do_predict:
+        stats_lists_preds = defaultdict(list)
+    print("check3")
     for j in range(T):
         save_model_path = '{}_{}'.format(folder_name+args.save_model_path, j+1)
         if os.path.exists(save_model_path):
@@ -235,7 +234,6 @@ def main():
 
             model = DNNC(path = save_model_path,
                          args = args)
-
         else:
             model = DNNC(path = BERT_NLI_PATH,
                          args = args)
@@ -246,9 +244,13 @@ def main():
                     os.mkdir(save_model_path)
                 model.save(save_model_path)
 
+        print("check4")
         intent_predictor = DnncIntentPredictor(model, sampled_tasks[j])
 
         in_domain_preds = []
+
+        # if args.do_predict:
+        #     model.evaluate(dev_examples)
 
         for e in tqdm(dev_examples, desc = 'Intent examples'):
             pred, conf, matched_example = intent_predictor.predict_intent(e.text)
@@ -269,18 +271,18 @@ def main():
         if args.save_model_path and args.do_predict:
             stats_lists_preds[j] = trial_stats_preds
 
-        in_acc = calc_in_acc(dev_examples, in_domain_preds, THRESHOLDS)
+        in_acc = calc_in_acc(dev_examples, in_domain_preds)
+        print("check5")
+        # print_results(in_acc)
+        print(in_acc)
 
-
-        print_results(THRESHOLDS, in_acc, oos_recall, oos_prec, oos_f1)
-
-        if f is not None:
-            for i in range(len(in_acc)):
-                f.write('{}'.format(in_acc[i]))
-            f.write('\n')
-
-        if f is not None:
-            f.close()
+        # if f is not None:
+        #     for i in range(len(in_acc)):
+        #         f.write('{}'.format(in_acc[i]))
+        #     f.write('\n')
+        #
+        # if f is not None:
+        #     f.close()
 
         if args.save_model_path and args.do_predict:
             if args.do_final_test:
@@ -291,5 +293,6 @@ def main():
             with open(save_file, "w") as outfile:
                 json.dump(stats_lists_preds, outfile, indent=4)
 
-    if __name__ == '__main__':
-        main()
+
+if __name__ == '__main__':
+    main()

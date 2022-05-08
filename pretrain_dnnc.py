@@ -81,9 +81,6 @@ def main():
                         type=str,
                         required=True,
                         help="Output file path")
-    parser.add_argument("--do_predict",
-                        action="store_true",
-                        help="do predict the model")
     
     args=parser.parse_args()
     
@@ -91,17 +88,14 @@ def main():
     
     nli_train_examples = None if args.do_predict else load_nli_examples(args.train_file_path, args.do_lower_case)
     nli_dev_examples = load_nli_examples(args.dev_file_path, args.do_lower_case)
-    
-    if os.path.exists('{}/pytorch_model.bin'.format(args.model_dir_path)):
-        assert args.do_predict
-        nli_model = DNNC(path=args.model_dir_path, args=args)
-        nli_model.evaluate(nli_dev_examples)
-    else:
-        assert not args.do_predict
+
+    if not os.path.exists('{}/pytorch_model.bin'.format(args.model_dir_path)):
         nli_model = DNNC(path=None, args=args)
         if not os.path.exists(args.model_dir_path):
             os.mkdir(args.model_dir_path)
         nli_model.train(nli_train_examples, nli_dev_examples, args.model_dir_path)
+    else:
+        raise Exception("There is model already")
 
 if __name__ == '__main__':
     main()

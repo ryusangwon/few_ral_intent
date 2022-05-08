@@ -10,8 +10,6 @@ import random
 import numpy as np
 import logging
 
-THRESHOLDS = [i * 0.1 for i in range(11)]
-
 def load_nli_examples(file_path, do_lower_case):
     
     examples = []
@@ -25,15 +23,6 @@ def load_nli_examples(file_path, do_lower_case):
             examples.append(e)
     return examples
 
-class IntentExample:
-    def __init__(self, text, label, do_lower_case):
-        self.original_text = text
-        self.text = text
-        self.label = label
-
-        if do_lower_case:
-            self.text = self.text.lower()
-
 def load_intent_examples(file_path, do_lower_case):
     examples = []
 
@@ -44,6 +33,15 @@ def load_intent_examples(file_path, do_lower_case):
             examples.append(e)
 
     return examples
+
+class IntentExample:
+    def __init__(self, text, label, do_lower_case):
+        self.original_text = text
+        self.text = text
+        self.label = label
+
+        if do_lower_case:
+            self.text = self.text.lower()
 
 def load_intent_datasets(train_file_path, dev_file_path, do_lower_case):
     train_examples = load_intent_examples(train_file_path, do_lower_case)
@@ -138,12 +136,12 @@ def accuracy(out, labels):
     outputs = np.argmax(out, axis=1)
     return np.sum(outputs == labels)
 
-def calc_in_acc(examples, in_domain_preds, thresholds):
-    in_acc = [0.0] * len(thresholds)
+def calc_in_acc(examples, in_domain_preds):
+    in_acc = [0.0]
 
     for e, (conf, pred) in zip(examples, in_domain_preds):
         for i in range(len(in_acc)):
-            if pred == e.label and conf >= thresholds[i]:
+            if pred == e.label:
                 in_acc[i] += 1
 
     if len(examples) > 0:
@@ -187,23 +185,10 @@ def sample(N, examples):
     sampled_examples = []
     for l in labels:
         random.shuffle(labels[l])
-        if l == 'oos':
-            examples = labels[l][:N]
-        else:
-            examples = labels[l][:N]
+        examples = labels[l][:N]
         sampled_examples.append({'task': l, 'examples': examples})
 
     return sampled_examples
 
-def print_results(thresholds, in_acc, oos_recall, oos_prec, oos_f1):
-    results = [['Threshold', 'In-domain accuracy', 'OOS recall', 'OOS precision', 'OOS F1']]
-
-    for i in range(len(thresholds)):
-        entry = [thresholds[i],
-                 100.0 * in_acc[i],
-                 100.0 * oos_recall[i],
-                 100.0 * oos_prec[i],
-                 100.0 * oos_f1[i]]
-        results.append(entry)
-
-    print(tabulate(results[1:], results[0], tablefmt="grid"))
+def print_results(in_acc):
+    print(in_acc * 100.0)

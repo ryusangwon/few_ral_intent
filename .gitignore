@@ -13,6 +13,8 @@
 /transformer/test_trainer/
 */.ipynb_checkpoints/*
 
+
+/clinc150_banking_dnnc/
 /roberta_nli/
 .idea/
 
