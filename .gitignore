@@ -13,6 +13,9 @@
 /transformer/test_trainer/
 */.ipynb_checkpoints/*
 
+pytorch_model.bin
+/model/nli-pretrained-roberta-base/pytorch_model.*
+/data/CLINC150/
 
 /clinc150_banking_dnnc/
 /roberta_nli/

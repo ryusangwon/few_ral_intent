@@ -35,20 +35,20 @@ class SupConLoss(nn.Module):
         #           if features.is_cuda
         #           else torch.device('cpu'))
         device = features.device
-        print("\n**feature type:", type(features), "**")
-        print("\n**feature size:", features.shape, "**")
-        print("\n**feature size len:", len(features.shape), "**")
-        # features = features.view(-1, 1, 2)
+        # print("\n**feature type:", type(features), "**")
+        # print("\n**feature size:", features.shape, "**")
+        # print("\n**feature size len:", len(features.shape), "**")
+        #
         features = torch.unsqueeze(features, -1)
-        print("\n**after feature size:", features.shape, "**")
-        print("\n**after feature size len:", len(features.shape), "**")
+        # print("\n**after feature size:", features.shape, "**")
+        # print("\n**after feature size len:", len(features.shape), "**")
         labels = torch.unsqueeze(labels, -1)
-        # labels = torch.unsqueeze(labels, 0)
-        print("\n**label size", labels.shape, "**")
-        print("\n**label size len", len(labels.shape), "**")
-        print("\n**labels.shape[0]", labels.shape[0], "**")
-        print("\n**features.shape[0]", features.shape[0], "**")
-        print("\n**Check please", features.shape[0] != labels.shape[0], "**")
+
+        # print("\n**label size", labels.shape, "**")
+        # print("\n**label size len", len(labels.shape), "**")
+        # print("\n**labels.shape[0]", labels.shape[0], "**")
+        # print("\n**features.shape[0]", features.shape[0], "**")
+        # print("\n**Check please", features.shape[0] != labels.shape[0], "**")
 
         if len(features.shape) < 3:
             raise ValueError('`features` needs to be [bsz, n_views, ...],'
