@@ -14,7 +14,7 @@
     "save_result_fp": "./data/CLINC150/5-shot/dnnc_inference.json",
     "seed": 42,
     "max_seq_length": 64,
-    "test_batch_size": 128,
+    "test_batch_size": 1,
     "train_batch_size": 128,
     "transform_labels": false,
     "warmup_proportion": 0.1,

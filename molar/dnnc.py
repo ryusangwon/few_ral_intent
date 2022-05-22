@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import csv
 import logging
 import random
 import numpy as np
@@ -9,6 +10,7 @@ from tqdm.auto import tqdm
 from typing import Iterable, Tuple
 import torch
 import torch.nn as nn
+import pdb
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import (
     AutoConfig,
@@ -28,9 +30,6 @@ from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
-    precision_recall_curve,
-    average_precision_score,
-    PrecisionRecallDisplay,
 )
 
 import copy
@@ -58,7 +57,7 @@ class DNNC(object):
     Main class for DNNC including initialization, training and evaluation
     """
 
-    def __init__(self, config_file="./models/dnnc_config.json"):
+    def __init__(self, config_file="./molar/dnnc_config.json"):
         with open(config_file, "r") as f:
             config_dict = json.loads(f.read())
         self.config = Config(config_dict)
@@ -387,11 +386,14 @@ class DNNC(object):
                 )[0]
                 ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1)) / config.gradient_accumulation_steps
 
-                l = 0.9
-                scl = SupConLoss(temperature=0.3, base_temperature=1)
-                sclLoss = scl(logits.view(-1, 2), labels.view(-1))
-                loss = l * sclLoss + (1 - l) * ceLoss
-                # loss = ceLoss
+#----
+                # l = 0.9
+                # scl = SupConLoss(temperature=0.3, base_temperature=1)
+                # sclLoss = scl(logits.view(-1, 2), labels.view(-1))
+                # loss = l * sclLoss + (1 - l) * ceLoss
+                #----
+                loss = ceLoss
+#----
 
                 # backward
                 loss.backward()
@@ -502,15 +504,23 @@ class DNNC(object):
         train_labels,
         unique_labels,
         device,
-        eval_batch_size=128
+        eval_batch_size=1
     ):
         model.eval()
 
         test_data_in_nli_format = []
         test_labels_in_nli_format = []
-        for i, sample1 in enumerate(test_data):
+
+
+#----
+        for i, sample1 in enumerate(test_data):     # test data 4000 * 750 (training)
             for j, sample2 in enumerate(train_data):
                 test_data_in_nli_format.append((sample1, sample2))
+        #----
+        # for i, sample1 in enumerate(test_data):
+        #     test_data_in_nli_format.append(sample1)  # test data 4000
+#----
+
 
         features = tokenizer(
             test_data_in_nli_format,
@@ -519,6 +529,11 @@ class DNNC(object):
             max_length=self.config.max_seq_length,
             truncation=True,
         )
+
+        # Test data
+        with open("test_data_nli_format.csv", 'w') as f:
+            writer = csv.writer(f)
+            writer.writerows(test_data_in_nli_format)
 
         if self.is_bert_type_tokenizer != True:
             dataset = TensorDataset(features["input_ids"], features["attention_mask"])
@@ -531,6 +546,8 @@ class DNNC(object):
         dataloader = DataLoader(dataset, batch_size=eval_batch_size, shuffle=False)
 
         preds = None
+        # sentence_vectors = []
+        fin_features = []
         with torch.no_grad():
             for batch in tqdm(dataloader):
                 if self.is_bert_type_tokenizer != True:
@@ -547,26 +564,38 @@ class DNNC(object):
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids,
                 )
-                logits = outputs[0]
-                # print("***logits: ", logits) # find hidden state
-                # print("***logits type: ", type(logits))
-                # print("***output type: ", type(outputs))
-                # print("***logits shape: ", logits.shape)
-                # print("***outputs hidden type: ", type(outputs.hidden_states))
-                # print("***outputs hidden len: ", len(outputs.hidden_states))
-                # print("***outputs[0] hidden len: ", len(outputs.hidden_states[-1]))
-                # print("***outputs[0] hidden shape: ", outputs.hidden_states[-1].shape)
-                # print("***dataloader len: ", len(dataloader))
+                logits = outputs[0] # logit shape [128, 2]
+#----
+                # features_ = logits[:, 0, :].cpu().numpy()
+                # fin_features.append(features_)
+#----
 
+                # sentence_vectors.append(outputs.hidden_states[-1].cpu().numpy()) # out of memory
                 pred = nn.Softmax(dim=-1)(logits).cpu().detach().numpy()
                 if preds is None:
                     preds = pred
                 else:
                     preds = np.concatenate((preds, pred))
-        preds = np.reshape(preds, (-1, len(train_data), 2))
-        max_pos_idx = np.argmax(preds[:, :, 0], axis=1)
-        max_prob = np.max(preds[:, :, 0], axis=1)
+        # sentence_vectors = np.vstack(sentence_vectors) # out of memory
 
+        # fin_features = np.vstack(fin_features)
+
+        print("preds before reshape: ", preds.shape) # (4500*750, 2)
+        # pdb.set_trace() # preds check,outputs.hidden_states[-1].shape (128, 64, 768)
+        preds = np.reshape(preds, (-1, len(train_data), 2)) #
+        print("preds after reshape: ", preds.shape) # (4500, 750, 2)
+
+
+#----
+        max_pos_idx = np.argmax(preds[:, :, 0], axis=1) # (4500, ) # 750 intent, pick 1 max
+        max_prob = np.max(preds[:, :, 0], axis=1) # (4500, )
+        #----
+        # max_pos_idx = np.argmax(preds[:, 0], axis=0)
+        # max_prob = np.max(preds[:, 0], axis=0)
+#----
+
+
+        # pdb.set_trace() # max_prob length check
         res = []
         for threshold in np.arange(THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP):
             preds = []
@@ -581,7 +610,28 @@ class DNNC(object):
             recall = recall_score(test_labels, preds, average="macro", zero_division=1)
             f1 = f1_score(test_labels, preds, average="macro", zero_division=1)
             res.append((threshold, acc, prec, recall, f1))
-        visualize(outputs.hidden_states[-1])
+
+        # print("***outputs[0] hidden len: ", len(outputs.hidden_states[-1]))
+        # print("***outputs[0] hidden shape: ", outputs.hidden_states[-1].shape)
+
+        # preds_np = preds.cpu().detach().numpy()
+        preds_np = np.array(preds) # (4500, )
+        # test_labels_np = test_labels.cpu().detach().numpy()
+        test_labels_np = np.array(test_labels)
+        # pdb.set_trace()
+        last_hidden_state_np = outputs.hidden_states[-1].cpu().detach().numpy()
+        print("last_hidden_state_np len before reshape: ", last_hidden_state_np.shape)
+        last_hidden_state_np = last_hidden_state_np.reshape(-1, last_hidden_state_np.shape[-1])
+        print("last_hidden_state_np len after reshape: ", last_hidden_state_np.shape)
+        # pdb.set_trace()
+        np.savetxt('preds_base.txt', preds_np, fmt='%d')
+        np.savetxt('test_labels_np_base.txt', test_labels_np, fmt='%d')
+        np.savetxt('last_hidden_state_base.txt', last_hidden_state_np, fmt='%d') # numpy.loadtxt()
+        np.savetxt('train_labels: ', train_labels, fmt='%1.6f')
+
+        print("shape last hidden: ", last_hidden_state_np.shape)
+
+        visualize(last_hidden_state_np, test_labels_np) # last_hidden_state_np shape: (4500, 768)
 
         return res, max_prob
 

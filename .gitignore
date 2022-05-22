@@ -21,6 +21,12 @@ pytorch_model.bin
 /roberta_nli/
 .idea/
 
+/tests/model/nli-pretrained-roberta-base/contrastive_model/*
+/tests/model/nli-pretrained-roberta-base/base_model/*
+/tests/test_data_nli_format.csv
+/tests/data/CLINC150/5-shot/contrastive_result.json
+/molar/dnnc_test.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

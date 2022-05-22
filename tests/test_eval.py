@@ -21,6 +21,7 @@ from molar import dnnc
 # add all paths and hyperparameters in test config file
 config = "test_dnnc_config.json"
 
+
 class ExperimentRunTest(unittest.TestCase):
 
     def test_run(self):
@@ -29,7 +30,6 @@ class ExperimentRunTest(unittest.TestCase):
         d.init()
         logger.info('initialization completed!')
         logger.info('begin the model training...')
-        d.train()
         logger.info('model trained')
         logger.info('checking if trained model has been saved...')
         self.assertTrue(os.path.exists(d.config.checkpoint_dir), 'model checkpoint directory was not created!')
