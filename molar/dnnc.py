@@ -387,12 +387,12 @@ class DNNC(object):
                 ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1)) / config.gradient_accumulation_steps
 
 #----
-                # l = 0.9
-                # scl = SupConLoss(temperature=0.3, base_temperature=1)
-                # sclLoss = scl(logits.view(-1, 2), labels.view(-1))
-                # loss = l * sclLoss + (1 - l) * ceLoss
+                l = 0.9
+                scl = SupConLoss(temperature=0.3, base_temperature=1)
+                sclLoss = scl(logits.view(-1, 2), labels.view(-1))
+                loss = l * sclLoss + (1 - l) * ceLoss
                 #----
-                loss = ceLoss
+                # loss = ceLoss
 #----
 
                 # backward
@@ -546,10 +546,10 @@ class DNNC(object):
         dataloader = DataLoader(dataset, batch_size=eval_batch_size, shuffle=False)
 
         preds = None
-        # sentence_vectors = []
+
         fin_features = []
         with torch.no_grad():
-            for batch in tqdm(dataloader):
+            for batch in tqdm(dataloader): # 4500*750/128 = 26368
                 if self.is_bert_type_tokenizer != True:
                     input_ids, attention_mask = batch
                     token_type_ids = None
@@ -571,15 +571,23 @@ class DNNC(object):
 #----
 
                 # sentence_vectors.append(outputs.hidden_states[-1].cpu().numpy()) # out of memory
+                lhs = outputs.hidden_states[-1]
+
+                lhs = lhs[:, 0, :]
+                # print("type: ", type(lhs))
+                features = lhs.cpu().numpy()
+                fin_features.append(features)
+
                 pred = nn.Softmax(dim=-1)(logits).cpu().detach().numpy()
                 if preds is None:
                     preds = pred
                 else:
                     preds = np.concatenate((preds, pred))
         # sentence_vectors = np.vstack(sentence_vectors) # out of memory
-
-        # fin_features = np.vstack(fin_features)
-
+        # pdb.set_trace() # 26368 len(fin_features)
+        fin_features = np.vstack(fin_features) # (3375000, 768) len(fin_features)
+        np.savetxt('fin_features_base.txt', fin_features, fmt='%1.18f')  # numpy.loadtxt()
+        # pdb.set_trace()
         print("preds before reshape: ", preds.shape) # (4500*750, 2)
         # pdb.set_trace() # preds check,outputs.hidden_states[-1].shape (128, 64, 768)
         preds = np.reshape(preds, (-1, len(train_data), 2)) #
@@ -611,27 +619,17 @@ class DNNC(object):
             f1 = f1_score(test_labels, preds, average="macro", zero_division=1)
             res.append((threshold, acc, prec, recall, f1))
 
-        # print("***outputs[0] hidden len: ", len(outputs.hidden_states[-1]))
-        # print("***outputs[0] hidden shape: ", outputs.hidden_states[-1].shape)
-
         # preds_np = preds.cpu().detach().numpy()
         preds_np = np.array(preds) # (4500, )
         # test_labels_np = test_labels.cpu().detach().numpy()
         test_labels_np = np.array(test_labels)
         # pdb.set_trace()
         last_hidden_state_np = outputs.hidden_states[-1].cpu().detach().numpy()
-        print("last_hidden_state_np len before reshape: ", last_hidden_state_np.shape)
         last_hidden_state_np = last_hidden_state_np.reshape(-1, last_hidden_state_np.shape[-1])
-        print("last_hidden_state_np len after reshape: ", last_hidden_state_np.shape)
-        # pdb.set_trace()
-        np.savetxt('preds_base.txt', preds_np, fmt='%d')
-        np.savetxt('test_labels_np_base.txt', test_labels_np, fmt='%d')
-        np.savetxt('last_hidden_state_base.txt', last_hidden_state_np, fmt='%d') # numpy.loadtxt()
-        np.savetxt('train_labels: ', train_labels, fmt='%1.6f')
+        # last_hidden_state_np = np.reshape(last_hidden_state_np, (-1, last_hidden_state_np[-1]))
 
-        print("shape last hidden: ", last_hidden_state_np.shape)
 
-        visualize(last_hidden_state_np, test_labels_np) # last_hidden_state_np shape: (4500, 768)
+        # visualize(last_hidden_state_np, test_labels_np) # last_hidden_state_np shape: (4500, 768)
 
         return res, max_prob
 
