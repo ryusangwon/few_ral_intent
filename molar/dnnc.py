@@ -20,7 +20,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     RobertaConfig,
 )
-from visualize import visualize
+from visualize import visualize, visualize_preprocess
 from supConloss import SupConLoss
 
 from sklearn.preprocessing import label_binarize
@@ -272,10 +272,15 @@ class DNNC(object):
         test_ood_df = pd.read_csv(config.ood_test_data_path, names=["utterance", "label"])
         self.ood_test_data = test_ood_df.utterance.tolist()
 
-        # prepare model
+        # # prepare model
         self.model = AutoModelForSequenceClassification.from_pretrained(
             config.pretrained_model_path, config=RobertaConfig.from_pretrained("roberta-base", output_hidden_states=True)
         )
+
+        # prepare model
+        # self.model = AutoModelForSequenceClassification.from_pretrained(
+        #     'roberta-base', config=RobertaConfig.from_pretrained("roberta-base", output_hidden_states=True)
+        # )
 
     def train(self):
         # load pretrained NLI model
@@ -384,15 +389,16 @@ class DNNC(object):
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids,
                 )[0]
-                ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1)) / config.gradient_accumulation_steps
+                # ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1)) / config.gradient_accumulation_steps
 
 #----
-                l = 0.9
-                scl = SupConLoss(temperature=0.3, base_temperature=1)
-                sclLoss = scl(logits.view(-1, 2), labels.view(-1))
-                loss = l * sclLoss + (1 - l) * ceLoss
+                # l = 0.9
+                # scl = SupConLoss(temperature=0.3, base_temperature=1)
+                # sclLoss = scl(logits.view(-1, 2), labels.view(-1))
+                # loss = l * sclLoss + (1 - l) * ceLoss
                 #----
-                # loss = ceLoss
+                ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1))
+                loss = ceLoss
 #----
 
                 # backward
@@ -565,16 +571,10 @@ class DNNC(object):
                     token_type_ids=token_type_ids,
                 )
                 logits = outputs[0] # logit shape [128, 2]
-#----
-                # features_ = logits[:, 0, :].cpu().numpy()
-                # fin_features.append(features_)
-#----
 
-                # sentence_vectors.append(outputs.hidden_states[-1].cpu().numpy()) # out of memory
                 lhs = outputs.hidden_states[-1]
 
                 lhs = lhs[:, 0, :]
-                # print("type: ", type(lhs))
                 features = lhs.cpu().numpy()
                 fin_features.append(features)
 
@@ -583,27 +583,14 @@ class DNNC(object):
                     preds = pred
                 else:
                     preds = np.concatenate((preds, pred))
-        # sentence_vectors = np.vstack(sentence_vectors) # out of memory
-        # pdb.set_trace() # 26368 len(fin_features)
+
         fin_features = np.vstack(fin_features) # (3375000, 768) len(fin_features)
-        np.savetxt('fin_features_base.txt', fin_features, fmt='%1.18f')  # numpy.loadtxt()
-        # pdb.set_trace()
-        print("preds before reshape: ", preds.shape) # (4500*750, 2)
-        # pdb.set_trace() # preds check,outputs.hidden_states[-1].shape (128, 64, 768)
+
         preds = np.reshape(preds, (-1, len(train_data), 2)) #
-        print("preds after reshape: ", preds.shape) # (4500, 750, 2)
 
-
-#----
         max_pos_idx = np.argmax(preds[:, :, 0], axis=1) # (4500, ) # 750 intent, pick 1 max
         max_prob = np.max(preds[:, :, 0], axis=1) # (4500, )
-        #----
-        # max_pos_idx = np.argmax(preds[:, 0], axis=0)
-        # max_prob = np.max(preds[:, 0], axis=0)
-#----
 
-
-        # pdb.set_trace() # max_prob length check
         res = []
         for threshold in np.arange(THRESHOLD_MIN, THRESHOLD_MAX, THRESHOLD_STEP):
             preds = []
@@ -628,8 +615,8 @@ class DNNC(object):
         last_hidden_state_np = last_hidden_state_np.reshape(-1, last_hidden_state_np.shape[-1])
         # last_hidden_state_np = np.reshape(last_hidden_state_np, (-1, last_hidden_state_np[-1]))
 
-
-        # visualize(last_hidden_state_np, test_labels_np) # last_hidden_state_np shape: (4500, 768)
+        visualize_lhs = visualize_preprocess(fin_features, len(preds_np))
+        visualize(visualize_lhs, preds_np) # last_hidden_state_np shape: (4500, 768)
 
         return res, max_prob
 
