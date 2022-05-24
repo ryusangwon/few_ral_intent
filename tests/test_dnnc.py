@@ -42,8 +42,8 @@ class ExperimentRunTest(unittest.TestCase):
         logger.info('checking if results have been saved...')
         # check if result file created
         self.assertTrue(os.path.exists(d.config.save_result_fp), 'results file missing')
-        shutil.rmtree(d.config.checkpoint_dir)
-        os.remove(d.config.save_result_fp)
+        # shutil.rmtree(d.config.checkpoint_dir)
+        # os.remove(d.config.save_result_fp)
         logger.info('testing completed!')
 
 if __name__ == '__main__':

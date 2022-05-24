@@ -277,7 +277,7 @@ class DNNC(object):
             config.pretrained_model_path, config=RobertaConfig.from_pretrained("roberta-base", output_hidden_states=True)
         )
 
-        # prepare model
+        # roberta model
         # self.model = AutoModelForSequenceClassification.from_pretrained(
         #     'roberta-base', config=RobertaConfig.from_pretrained("roberta-base", output_hidden_states=True)
         # )
@@ -389,16 +389,17 @@ class DNNC(object):
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids,
                 )[0]
-                # ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1)) / config.gradient_accumulation_steps
+
 
 #----
-                # l = 0.9
-                # scl = SupConLoss(temperature=0.3, base_temperature=1)
-                # sclLoss = scl(logits.view(-1, 2), labels.view(-1))
-                # loss = l * sclLoss + (1 - l) * ceLoss
-                #----
-                ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1))
-                loss = ceLoss
+                ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1)) / config.gradient_accumulation_steps
+                l = 0.99
+                scl = SupConLoss(temperature=0.3, base_temperature=1)
+                sclLoss = scl(logits.view(-1, 2), labels.view(-1))
+                loss = l * sclLoss + (1 - l) * ceLoss
+                # ----
+                # ceLoss = loss_fct(logits.view(-1, 2), labels.view(-1))
+                # loss = ceLoss
 #----
 
                 # backward
