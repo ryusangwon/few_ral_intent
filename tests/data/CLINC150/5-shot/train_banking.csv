@@ -1,0 +1,75 @@
+what is the process to move money from one account to another,transfer
+transfer money from one place to another,transfer
+send 50 dollars between bank of america and chase accounts,transfer
+put $40 from account a to b,transfer
+send $5 from savings to checking,transfer
+what transactions did i make yesterday at the flea market,transactions
+i want to see my entertainment transactions,transactions
+show me the transaction on macys,transactions
+i need a recent transaction looked into,transactions
+show me the last five transactions,transactions
+what's my savings balance at chase,balance
+how much is the current balance in my td bank savings account,balance
+savings account balance at chase bank please,balance
+what is my current balance on my home equity line of credit,balance
+what amount of money is in my bank accounts,balance
+"help me freeze my bank account, please",freeze_account
+i need you to block my mutualone account now,freeze_account
+freeze my bank account,freeze_account
+could you put a stop on my bank account,freeze_account
+i'd like a block on my charles schwab account immediately,freeze_account
+i need to pay this month's tv subscription fee,pay_bill
+pay the cable bill with my visa card,pay_bill
+i want to pay my rent bill,pay_bill
+pay my electric bill from my paypal account,pay_bill
+i'd like to pay my coned bill,pay_bill
+how much do i need to pay on my bills,bill_balance
+"for my water and electricity, how much is the bill",bill_balance
+i need to know my bill total for my verizon payment due this month,bill_balance
+add all my bills for this month and tell me the total,bill_balance
+what am i being charged for my water bill,bill_balance
+tell me when my bill will be due,bill_due
+where should i look for when my gas bill is due,bill_due
+when do i need to pay my annual payment for auto insurance,bill_due
+i need to know the due date for my credit card,bill_due
+on what day do i have to pay my nordstrom bill,bill_due
+what's the interest rate on my savings,interest_rate
+what's my interest rate,interest_rate
+how much interest am i getting on my savings,interest_rate
+can you tell me my current interest rate,interest_rate
+how percentage am i earning annually on my account,interest_rate
+where do i find the routing number for bank of america,routing
+i want to know my routing number please,routing
+how do i locate my routing number for tax reasons,routing
+"ai, what is the routing number for my citibank savings account",routing
+give me the routing number for my paragon account,routing
+what is the minimum payment for my credit card bill,min_payment
+how tiny a payment can i make on electric bill,min_payment
+please lookup the minimum i need to pay on my credit card,min_payment
+what is my bill's minimum payment,min_payment
+what's the least i can pay on the medical payments for february,min_payment
+i need to order more checks for my savings account,order_checks
+"can you order me more checks, please",order_checks
+how can i order more checks since i do not have any more,order_checks
+please show me how to order more checks for my savings account,order_checks
+can you get me more checkbooks for my southern account,order_checks
+i gotta change my pin number for my debit account,pin_change
+i cannot remember what my pin is for my bank of america checking account,pin_change
+change my amex pin to 1234,pin_change
+i wanna change my pin number for my credit acount,pin_change
+i got to change my pin number for my account,pin_change
+i think i've been the victim of fraud,report_fraud
+"i want to report fraudulent activity on my visa card, please",report_fraud
+i have detected fraudulent activity on my account,report_fraud
+how do i let visa know about a charge i didn't make,report_fraud
+i suspect fraudulent transaction,report_fraud
+why is there a hold on my american saving bank account,account_blocked
+i'm confused about the reason for my bank account being frozen,account_blocked
+what would cause my bank account to be frozen,account_blocked
+how come a hold was placed on my 401k account,account_blocked
+why was a hold placed on my wells fargo account,account_blocked
+how much money did i spend at starbucks in the last week,spending_history
+have i been spending more money at restaurants,spending_history
+what was the total i spent at home depot last month,spending_history
+can you tell me my spending history from last week,spending_history
+have i been giving lot of money to food to food lately,spending_history
